@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto px-6 py-10">
+
+
+
+<div class="text-center mb-10">
+
+    <h1 class="text-5xl font-black text-slate-900 tracking-tight">
+        Bienvenido a Natura Shop
+    </h1>
+
+    <p class="text-slate-500 mt-4 text-lg">
+        Descubre perfumes, maquillaje, productos para el cabello,
+        cuidado corporal y promociones exclusivas Natura.
+    </p>
+
+</div>
+
+<!-- Buscador en tiempo real (Fetch API - Clase 5) -->
+<div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl mb-10">
+
+    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-indigo-500"></i>
+        Buscador Predictivo (Fetch API)
+    </h3>
+
+    <input
+        type="text"
+        id="inputBusqueda"
+        placeholder="Escribe el nombre de un producto para buscar..."
+        class="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm"
+    >
+
+    <!-- Contenedor dinámico de resultados -->
+    <div id="resultados-busqueda" class="mt-4 hidden space-y-2"></div>
+
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+
+    <button
+    onclick="mostrarTodos()"
+    class="bg-indigo-600 text-white p-6 rounded-2xl shadow text-center font-bold"
+>
+    🛍 Todos
+    </button>
+
+    <button
+    onclick="filtrarCategoria('Perfumes Mujer')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+    🌸 Perfumes Mujer
+</button>
+    <button
+    onclick="filtrarCategoria('Perfumes Hombre')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+    👔 Perfumes Hombre
+</button>
+
+    <button
+    onclick="filtrarCategoria('Jabones')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+    🧼 Jabones
+</button>
+
+    <button
+    onclick="filtrarCategoria('Cabello')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+        💇 Cabello
+    </button>
+
+    <button
+    onclick="filtrarCategoria('Corporales')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+        🧴 Corporales
+    </button>
+
+    <button
+    onclick="filtrarCategoria('Maquillaje')"
+    class="bg-white p-6 rounded-2xl shadow text-center font-bold"
+>
+        💄 Maquillaje
+    </button>
+
+</div>
+
+{% if session.get('user_id') %}
+<!-- Formulario CRUD -->
+<div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl mb-10">
+
+    <h3 class="font-bold text-lg text-slate-800 mb-4">
+    Panel de Carga de Productos Natura
+    </h3>
+
+    <form action="/agregar" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <input
+            type="text"
+            name="nombre"
+            placeholder="Nombre (ej. Champú Orgánico)"
+            required
+            class="p-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        >
+
+        <input
+            type="number"
+            step="0.01"
+            name="precio"
+            placeholder="Precio ($)"
+            required
+            class="p-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        >
+
+
+        <select
+            name="categoria"
+            class="p-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        >
+
+            <option value="">Seleccionar categoría</option>
+
+            <option value="Perfumes Mujer">
+                Perfumes Mujer
+            </option>
+
+            <option value="Perfumes Hombre">
+                Perfumes Hombre
+            </option>
+
+            <option value="Jabones">
+                Jabones
+            </option>
+
+            <option value="Cabello">
+                Cabello
+            </option>
+
+            <option value="Corporales">
+                Corporales
+            </option>
+
+            <option value="Maquillaje">
+                Maquillaje
+            </option>
+
+        </select>
+
+
+            <textarea
+            name="descripcion"
+            placeholder="Descripción del producto"
+            rows="3"
+            class="md:col-span-3 p-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        ></textarea>
+
+        <input
+            type="file"
+            name="imagen"
+            placeholder="Nombre imagen (ej: kaiak.jpg)"
+            class="md:col-span-3 p-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        >
+
+        <button
+            type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md shadow-indigo-100"
+        >
+            Guardar en DB
+        </button>
+
+    </form>
+
+</div>
+
+
+{% endif %}
+
+<!-- Tabla -->
+<div id="catalogo" class="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden"></div>
+
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+
+        {% for p in productos %}
+
+            <div
+                    class="producto-card bg-white rounded-3xl shadow-lg overflow-hidden border border-slate-100"
+                    data-categoria="{{ p.categoria }}"
+                >
+
+            <!-- Imagen temporal -->
+            <div class="h-52 bg-slate-100 flex items-center justify-center">
+
+              {% if p.imagen %}
+
+                <img
+                    src="{{ url_for('static', filename='img/' + p.imagen) }}"
+                    title="{{ p.imagen }}"
+                    alt="{{ p.nombre }}"
+                    class="w-full h-full object-cover"
+                >
+                {% else %}
+                <img
+                    src="https://dummyimage.com/300x250/cccccc/000000&text=Natura+Shop"
+                    alt="Sin imagen"
+                    class="w-full h-full object-cover"
+                >
+                    {% endif %}
+
+            </div>
+
+            <div class="p-5">
+
+                <span class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">
+                    {{ p.categoria }}
+                </span>
+
+                    <h3 class="text-xl font-bold text-slate-800 mt-4">
+                        {{ p.nombre }}
+                    </h3>
+
+                    <p class="text-sm text-slate-500 mt-2">
+                        {{ p.descripcion }}
+                    </p>
+
+                    <p class="text-2xl font-black text-indigo-600 mt-3">
+                        ${{ "{:,.0f}".format(p.precio).replace(",", ".") }}
+                    </p>
+
+                <div class="flex gap-2 mt-5">
+                        <a
+                            href="https://wa.me/5493644683672?text=Hola%0A%0AEstoy%20interesado%20en%20el%20siguiente%20producto%20Natura:%0A%0AProducto:%20{{ p.nombre }}%0ACategoría:%20{{ p.categoria }}%0APrecio:%20${{ '{:,.0f}'.format(p.precio).replace(',', '.') }}%0A%0A¿Podrías%20brindarme%20más%20información?"
+                            target="_blank"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl font-bold transition-all text-center"
+                        >
+                            <i class="fa-brands fa-whatsapp"></i>
+                            WhatsApp
+                        </a>
+
+                        <a
+                            href="/agregar_carrito/{{ p.id }}"
+                            class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-bold transition-all text-center"
+                        >
+                            🛒 Agregar
+                        </a>
+                    {% if session.get('user_id') %}
+
+                    <a
+                        href="/borrar/{{ p.id }}"
+                        class="bg-rose-100 hover:bg-rose-200 text-rose-600 px-4 py-2 rounded-xl font-bold transition-all">
+                        Eliminar
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="col-span-full text-center text-slate-400 p-10">
+            No hay productos cargados todavía.
+        </div>
+
+        {% endfor %}
+
+    </div>
+</div>
+
+
+</div>
+
+<!-- Script Buscador -->
+
+<script>
+
+    function mostrarTodos(){
+
+    const productos =
+    document.querySelectorAll('.producto-card');
+
+    productos.forEach(producto => {
+
+        producto.style.display = 'block';
+
+    });
+
+    document.getElementById('catalogo')
+        .scrollIntoView({
+            behavior: 'smooth'
+        });
+
+}
+
+
+
+
+    function filtrarCategoria(categoria){
+
+    const productos =
+    document.querySelectorAll('.producto-card');
+
+    productos.forEach(producto => {
+
+        if(producto.dataset.categoria === categoria){
+
+            producto.style.display = 'block';
+
+        }else{
+
+            producto.style.display = 'none';
+
+        }
+
+    });
+
+    document.getElementById('catalogo')
+        .scrollIntoView({
+            behavior: 'smooth'
+        });
+
+}
+
+const input = document.getElementById('inputBusqueda');
+const resultadosDiv = document.getElementById('resultados-busqueda');
+
+input.addEventListener('input', async (e) => {
+
+    const query = e.target.value.trim();
+
+    if (query.length < 2) {
+        resultadosDiv.innerHTML = '';
+        resultadosDiv.classList.add('hidden');
+        return;
+    }
+
+    try {
+
+        const res = await fetch(`/api/buscar?q=${query}`);
+        const productos = await res.json();
+
+        resultadosDiv.innerHTML = '';
+        resultadosDiv.classList.remove('hidden');
+
+        if (productos.length === 0) {
+
+            resultadosDiv.innerHTML =
+                `<p class="text-xs text-slate-400 italic p-2">
+                    No se encontraron productos coincidentes.
+                </p>`;
+
+        } else {
+
+            productos.forEach(p => {
+
+                resultadosDiv.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-indigo-50/30 border border-indigo-100/50 rounded-xl text-xs">
+                        <span class="font-bold text-slate-700">${p.nombre}</span>
+                        <span class="font-black text-indigo-600">$${p.precio.toFixed(2)}</span>
+                    </div>
+                `;
+
+            });
+
+        }
+
+    } catch (err) {
+
+        console.error("Error al buscar:", err);
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

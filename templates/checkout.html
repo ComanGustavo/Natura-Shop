@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto px-6 py-10">
+
+    <h1 class="text-4xl font-black text-slate-800 mb-8">
+        Finalizar Pedido
+    </h1>
+
+    <form method="POST" action="{{ url_for('enviar_pedido') }}">
+
+        <div class="mb-4">
+            <label class="font-bold">Nombre</label>
+
+            <input
+                type="text"
+                name="nombre"
+                required
+                class="w-full border rounded-xl p-3">
+        </div>
+
+        <div class="mb-4">
+            <label class="font-bold">Dirección</label>
+
+            <input
+                type="text"
+                name="direccion"
+                required
+                class="w-full border rounded-xl p-3">
+        </div>
+
+        <div class="mb-4">
+            <label class="font-bold">Localidad</label>
+
+            <input
+                type="text"
+                name="localidad"
+                required
+                class="w-full border rounded-xl p-3">
+        </div>
+
+        <div class="mb-6">
+            <label class="font-bold">Forma de pago</label>
+
+            <select
+                name="pago"
+                class="w-full border rounded-xl p-3">
+
+                <option>Efectivo</option>
+                <option>Transferencia</option>
+                <option>Mercado Pago</option>
+
+            </select>
+
+        </div>
+
+        <button
+            type="submit"
+            class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">
+
+            🟢 Enviar pedido
+
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

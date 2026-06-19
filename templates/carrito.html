@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-5xl mx-auto px-6 py-10">
+
+    <h1 class="text-4xl font-black text-slate-800 mb-8">
+        🛒 Mi Carrito
+    </h1>
+
+    {% if productos_carrito %}
+
+        <div class="space-y-4">
+
+            {% for item in productos_carrito %}
+
+            <div class="bg-white rounded-2xl shadow p-5 flex justify-between items-center">
+
+                <div>
+
+                    <h3 class="text-xl font-bold">
+                        {{ item.producto.nombre }}
+                    </h3>
+
+                    <p class="text-slate-500">
+                        {{ item.producto.descripcion }}
+                    </p>
+
+                    <p class="mt-2 font-semibold text-indigo-600">
+                        Cantidad: {{ item.cantidad }}
+                    </p>
+
+                </div>
+
+                <div class="text-right">
+
+                    <p class="text-slate-500 text-sm">
+                        Unitario:
+                        ${{ "{:,.0f}".format(item.producto.precio).replace(",", ".") }}
+                    </p>
+
+                    <p class="text-2xl font-black text-indigo-600">
+                        ${{ "{:,.0f}".format(item.subtotal).replace(",", ".") }}
+                    </p>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        <!-- TOTAL -->
+
+        <div class="mt-8 bg-white rounded-2xl shadow p-6 flex justify-between items-center">
+
+            <h2 class="text-2xl font-black text-slate-800">
+                Total
+            </h2>
+
+            <div class="text-3xl font-black text-emerald-600">
+                ${{ "{:,.0f}".format(total).replace(",", ".") }}
+            </div>
+
+        </div>
+
+        <!-- BOTONES -->
+
+        <div class="mt-6 flex gap-4">
+
+            <a href="{{ url_for('vaciar_carrito') }}"
+               class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
+                🗑 Vaciar carrito
+            </a>
+
+            <a href="{{ url_for('checkout') }}"
+            class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">
+                🟢 Finalizar pedido
+            </a>
+
+        </div>
+
+    {% else %}
+
+        <div class="bg-white rounded-2xl shadow p-8 text-center">
+
+            <h3 class="text-2xl font-bold text-slate-700">
+                Tu carrito está vacío
+            </h3>
+
+            <p class="text-slate-500 mt-2">
+                Agrega productos para comenzar tu compra.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

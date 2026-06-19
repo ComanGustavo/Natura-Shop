@@ -1,0 +1,234 @@
+{% extends "base.html" %} 
+ 
+{% block content %} 
+<!-- Animación de entrada progresiva de elementos reales --> 
+<style> 
+    .card-entry { 
+        animation: cardSlideUp 0.5s ease-out forwards; 
+    } 
+    @keyframes cardSlideUp { 
+        from { 
+            opacity: 0; 
+            transform: translateY(12px); 
+        } 
+        to { 
+            opacity: 1; 
+            transform: translateY(0); 
+        } 
+    } 
+</style> 
+ 
+<div class="max-w-5xl mx-auto py-12 px-6"> 
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"> 
+         
+        <!-- Encabezado de Sesión --> 
+        <div class="bg-indigo-600 p-8 text-white flex flex-col md:flex-row items-center justify-between 
+gap-6"> 
+            <div class="flex items-center gap-6"> 
+                <div class="w-20 h-20 bg-indigo-400 rounded-full flex items-center justify-center text-3xl 
+font-bold border-4 border-indigo-300"> 
+                    {{ nombre[0] | upper }} 
+                </div> 
+                <div> 
+                    <h1 class="text-3xl font-black">Panel de {{ nombre }}</h1> 
+                    <p class="text-indigo-100">Sesión iniciada correctamente 
+✅
+</p> 
+                </div> 
+            </div> 
+            <a href="/logout" class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-xl font-bold 
+transition-all backdrop-blur-md border border-white/20 text-sm"> 
+                Cerrar Sesión 
+            </a> 
+        </div> 
+ 
+        <!-- Acciones del Sandbox de Experiencia de Usuario (Clase 8) --> 
+        <div class="p-8 border-b border-slate-50 bg-slate-50 flex flex-col sm:flex-row justify-between 
+items-center gap-4"> 
+            <div> 
+                <h3 class="font-bold text-slate-800">Evaluación de Experiencia de Usuario</h3> 
+                <p class="text-xs text-slate-400">Prueba cómo responde la UI ante retrasos artificiales del 
+servidor.</p> 
+            </div> 
+            <div class="flex gap-3 w-full sm:w-auto"> 
+                <button id="btn-crear-mock" class="flex-grow sm:flex-grow-0 bg-indigo-600 
+hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all flex items-center 
+justify-center gap-2"> 
+                    <i class="fa-solid fa-plus"></i> Nueva Reserva (1.5s delay) 
+                </button> 
+                <button id="btn-vaciar-mock" class="flex-grow sm:flex-grow-0 bg-rose-50 hover:bg-rose-100 
+text-rose-600 font-bold px-4 py-2.5 rounded-xl text-xs transition-all flex items-center justify-center 
+gap-2"> 
+                    <i class="fa-solid fa-trash-can"></i> Limpiar Agenda (1s delay) 
+                </button> 
+            </div> 
+        </div> 
+ 
+        <!-- ÁREA DINÁMICA DE ESTADOS ASÍNCRONOS --> 
+        <div class="p-8"> 
+             
+            <!-- ============================================================ --> 
+            <!-- ESTADO 1: SKELETON SCREEN (Pantalla de carga estructural)    --> 
+            <!-- ============================================================ --> 
+            <div id="loading-state" class="space-y-4"> 
+                <div class="bg-white rounded-2xl p-5 border border-slate-100 flex items-center 
+justify-between animate-pulse"> 
+                    <div class="flex items-center gap-4 w-2/3"> 
+                        <div class="w-12 h-12 bg-slate-200 rounded-xl"></div> 
+                        <div class="flex-grow space-y-2"> 
+                            <div class="h-4 bg-slate-200 rounded w-1/3"></div> 
+                            <div class="h-3 bg-slate-200 rounded w-1/2"></div> 
+                        </div> 
+                    </div> 
+                    <div class="w-24 h-8 bg-slate-200 rounded-lg"></div> 
+                </div> 
+                <div class="bg-white rounded-2xl p-5 border border-slate-100 flex items-center 
+justify-between animate-pulse"> 
+                    <div class="flex items-center gap-4 w-2/3"> 
+                        <div class="w-12 h-12 bg-slate-200 rounded-xl"></div> 
+                        <div class="flex-grow space-y-2"> 
+                            <div class="h-4 bg-slate-200 rounded w-1/4"></div> 
+                            <div class="h-3 bg-slate-200 rounded w-1/3"></div> 
+                        </div> 
+                    </div> 
+                    <div class="w-24 h-8 bg-slate-200 rounded-lg"></div> 
+                </div> 
+            </div> 
+ 
+            <!-- ============================================================ --> 
+            <!-- ESTADO 2: EMPTY STATE (Pantalla activa si no hay reservas)  --> 
+            <!-- ============================================================ --> 
+            <div id="empty-state" class="hidden text-center py-12 max-w-sm mx-auto card-entry"> 
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center 
+mx-auto mb-4"> 
+                    <i class="fa-solid fa-calendar-xmark text-2xl"></i> 
+                </div> 
+                <h3 class="text-lg font-bold text-slate-800">No hay reservas registradas</h3> 
+                <p class="text-slate-400 mt-1 text-xs leading-relaxed"> 
+                    Tu agenda se encuentra actualmente vacía. Haz clic en "Nueva Reserva" para simular un 
+proceso de guardado asíncrono. 
+                </p> 
+            </div> 
+ 
+            <!-- ============================================================ --> 
+            <!-- ESTADO 3: CONTENEDOR DE DATOS REALES                         --> 
+            <!-- ============================================================ --> 
+            <div id="data-state" class="hidden space-y-4"> 
+                <!-- Se inyectarán de manera dinámica vía JavaScript --> 
+            </div> 
+ 
+        </div> 
+ 
+    </div> 
+</div> 
+ 
+<!-- SCRIPT DE CONTROL DE INTERFAZ --> 
+<script> 
+    const loader = document.getElementById('loading-state'); 
+    const emptyState = document.getElementById('empty-state'); 
+    const dataState = document.getElementById('data-state'); 
+ 
+    const btnCrear = document.getElementById('btn-crear-mock'); 
+    const btnVaciar = document.getElementById('btn-vaciar-mock'); 
+ 
+    // Función asíncrona que hace fetch a nuestra API con delay de red de prueba 
+    async function cargarReservas() { 
+        // Encendemos el Skeleton de carga y apagamos estados secundarios 
+        loader.classList.remove('hidden'); 
+        emptyState.classList.add('hidden'); 
+        dataState.classList.add('hidden'); 
+ 
+        try { 
+            const response = await fetch('/api/reservas'); 
+            if (!response.ok) throw new Error("Error al obtener los datos de la sesión."); 
+             
+            const reservas = await response.json(); 
+            dataState.innerHTML = '';  
+ 
+            if (reservas.length === 0) { 
+                // Si la DB simulada está vacía, mostramos el Empty State 
+                emptyState.classList.remove('hidden'); 
+            } else { 
+                // Inyectamos cada tarjeta con su animación suave 'card-entry' 
+                reservas.forEach(r => { 
+                    const tarjeta = ` 
+                        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex 
+items-center justify-between hover:shadow-md transition-all duration-300 card-entry"> 
+                            <div class="flex items-center gap-4"> 
+                                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center 
+justify-center text-xl"> 
+                                    
+�
+�
+ 
+                                </div> 
+                                <div> 
+                                    <h4 class="font-bold text-slate-800">${r.servicio}</h4> 
+                                    <p class="text-slate-400 text-xs flex items-center gap-1 mt-0.5"> 
+                                        <i class="fa-regular fa-id-badge"></i> Código: ${r.id} 
+                                    </p> 
+                                </div> 
+                            </div> 
+                            <span class="bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1.5 rounded-lg 
+uppercase tracking-wider"> 
+                                ${r.estado} 
+                            </span> 
+                        </div> 
+                    `; 
+                    dataState.innerHTML += tarjeta; 
+                }); 
+                dataState.classList.remove('hidden'); 
+            } 
+        } catch (error) { 
+            console.error(error); 
+        } finally { 
+            // El esqueleto de carga se oculta de forma obligatoria al resolver la promesa 
+            loader.classList.add('hidden'); 
+        } 
+    } 
+ 
+    // Evento para simular la creación de una reserva (POST) 
+    btnCrear.addEventListener('click', async () => { 
+        btnCrear.disabled = true; 
+        btnCrear.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Guardando...`; 
+ 
+        try { 
+            const response = await fetch('/api/reservas/crear', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' } 
+            }); 
+            if (response.ok) { 
+                await cargarReservas(); // Recarga la lista para ejecutar el flujo completo 
+            } 
+        } catch (e) { 
+            console.error(e); 
+        } finally { 
+            btnCrear.disabled = false; 
+            btnCrear.innerHTML = `<i class="fa-solid fa-plus text-xs"></i> Nueva Reserva (1.5s delay)`; 
+        } 
+    }); 
+ 
+    // Evento para limpiar la agenda de reservas (POST) 
+    btnVaciar.addEventListener('click', async () => { 
+        if (!confirm("¿Deseas vaciar la agenda para evaluar el Empty State?")) return; 
+ 
+        btnVaciar.disabled = true; 
+        btnVaciar.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Limpiando...`; 
+ 
+        try { 
+            const response = await fetch('/api/reservas/limpiar', { method: 'POST' }); 
+            if (response.ok) { 
+                await cargarReservas(); 
+            } 
+        } catch (e) { 
+            console.error(e); 
+        } finally { 
+            btnVaciar.disabled = false; 
+            btnVaciar.innerHTML = `<i class="fa-solid fa-trash-can text-xs"></i> Limpiar Agenda (1s delay)`; 
+        } 
+    }); 
+ 
+    // Lanzar consulta asíncrona tan pronto se cargue la estructura DOM 
+    window.addEventListener('DOMContentLoaded', cargarReservas); 
+</script> 
+{% endblock %}
